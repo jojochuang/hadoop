@@ -663,6 +663,8 @@ public class TestShuffleHandler {
           ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION);
     }
 
+    // FIXME: connections are accepted in parallel; it's not sequential.
+    // FIXME: rewrite this test.
     // Try to open numerous connections
     for (int i = 0; i < connAttempts; i++) {
       conns[i].connect();
