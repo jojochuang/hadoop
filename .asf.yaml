@@ -23,3 +23,8 @@ notifications:
   issues:       common-issues@hadoop.apache.org
   pullrequests: common-issues@hadoop.apache.org
   jira_options: link label worklog
+staging:
+  profile: ~
+  whoami:  asf-staging
+publish:
+  whoami:  asf-site
