@@ -430,7 +430,10 @@ class FSDirXAttrOp {
       if (inode != null &&
           inode.isDirectory() &&
           inode.getFsPermission().getStickyBit()) {
-        if (!pc.isSuperUser()) {
+        if (pc.isSuperUser()) {
+          // call external enforcer for audit
+          pc.checkSuperuserPrivilege(iip.getPath());
+        } else {
           fsd.checkOwner(pc, iip);
         }
       } else {
