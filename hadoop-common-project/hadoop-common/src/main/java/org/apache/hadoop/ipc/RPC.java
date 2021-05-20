@@ -937,11 +937,18 @@ public class RPC {
     */
    static class ProtoClassProtoImpl {
      final Class<?> protocolClass;
-     final Object protocolImpl; 
+      final Object protocolImpl;
+      private final boolean newPBImpl;
+
      ProtoClassProtoImpl(Class<?> protocolClass, Object protocolImpl) {
        this.protocolClass = protocolClass;
        this.protocolImpl = protocolImpl;
+        this.newPBImpl = protocolImpl instanceof BlockingService;
      }
+
+      public boolean isNewPBImpl() {
+        return newPBImpl;
+      }
    }
 
    ArrayList<Map<ProtoNameVer, ProtoClassProtoImpl>> protocolImplMapArray = 
