@@ -49,6 +49,14 @@ import static org.apache.hadoop.fs.s3a.Constants.DEFAULT_ENDPOINT;
 @InterfaceStability.Evolving
 public interface S3ClientFactory {
 
+  default AmazonS3 createS3Client(URI name,
+      String bucket,
+      AWSCredentialsProvider credentialSet,
+      String userAgentSuffix,
+      StatisticsFromAwsSdk statisticsFromAwsSdk) throws IOException {
+    throw new IOException("Unimplemented");
+  }
+
   /**
    * Creates a new {@link AmazonS3} client.
    *
