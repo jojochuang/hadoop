@@ -433,7 +433,7 @@ public class INodesInPath {
     return this.isSnapshot;
   }
 
-  private static String toString(INode inode) {
+  static String toString(INode inode) {
     return inode == null? null: inode.getLocalName();
   }
 

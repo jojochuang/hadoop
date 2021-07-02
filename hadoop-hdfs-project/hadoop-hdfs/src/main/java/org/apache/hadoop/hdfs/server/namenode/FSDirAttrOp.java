@@ -17,6 +17,7 @@
  */
 package org.apache.hadoop.hdfs.server.namenode;
 
+import com.google.common.base.Optional;
 import org.apache.hadoop.HadoopIllegalArgumentException;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.PathIsNotDirectoryException;
@@ -43,6 +44,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_NAMENODE_ACCESSTIME_PRECISION_KEY;
 import static org.apache.hadoop.hdfs.DFSConfigKeys.DFS_QUOTA_BY_STORAGETYPE_ENABLED_KEY;
@@ -330,13 +332,36 @@ public class FSDirAttrOp {
     }
   }
 
+  private static void logErrorUnprotectedSetTimes(INodesInPath iip, INode lastINode,
+      long mtime, long atime, boolean force, Throwable t) {
+    FSEditLogLoader.LOG.error(t.getClass().getSimpleName()
+        + " caught in unprotectedSetTimes: iip="
+        + (iip == null? "(null": iip.toString())
+//        + Optional.fromNullable(iip).map(i -> i.toString(false)).orElse(null)
+        + ", lastINode=" + lastINode
+        + ", mtime=" + mtime + ", atime=" + atime + ", force? " + force, t);
+  }
+
   static boolean unprotectedSetTimes(
       FSDirectory fsd, String src, long mtime, long atime, boolean force)
       throws UnresolvedLinkException, QuotaExceededException {
     assert fsd.hasWriteLock();
-    final INodesInPath i = fsd.getINodesInPath(src, true);
-    return unprotectedSetTimes(fsd, i.getLastINode(), mtime, atime,
-                               force, i.getLatestSnapshotId());
+    final INodesInPath iip = fsd.getINodesInPath(src, true);
+    try {
+      Objects.requireNonNull(iip, "iip == null").validate();
+    } catch (Throwable t) {
+      logErrorUnprotectedSetTimes(iip, null, mtime, atime, force, t);
+    }
+    INode lastINode = null;
+    try {
+      lastINode = iip.getLastINode();
+      return unprotectedSetTimes(fsd, lastINode, mtime, atime,
+          force, iip.getLatestSnapshotId());
+    } catch (Throwable t) {
+      logErrorUnprotectedSetTimes(iip, lastINode, mtime, atime, force, t);
+      return false;
+    }
+
   }
 
   /**
