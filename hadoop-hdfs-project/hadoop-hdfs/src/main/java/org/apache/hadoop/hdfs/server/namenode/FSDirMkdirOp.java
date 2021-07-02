@@ -202,6 +202,7 @@ class FSDirMkdirOp {
           aclEntries, timestamp);
     } catch (Throwable t) {
       logInvalidIIP(existing, lastINode, src, t);
+      throw t;
     }
   }
 

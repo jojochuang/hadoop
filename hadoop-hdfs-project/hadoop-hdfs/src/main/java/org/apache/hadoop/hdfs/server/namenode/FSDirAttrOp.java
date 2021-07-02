@@ -362,7 +362,7 @@ public class FSDirAttrOp {
           force, iip.getLatestSnapshotId());
     } catch (Throwable t) {
       logErrorUnprotectedSetTimes(iip, lastINode, mtime, atime, force, t);
-      return false;
+      throw t;
     }
 
   }
