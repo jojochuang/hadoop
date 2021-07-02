@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.hdfs.DFSUtil;
+import org.apache.hadoop.hdfs.server.namenode.FSImage;
 import org.apache.hadoop.hdfs.server.namenode.FSImageFormat;
 import org.apache.hadoop.hdfs.server.namenode.FSImageSerialization;
 import org.apache.hadoop.hdfs.server.namenode.INode;
@@ -155,9 +156,10 @@ public class SnapshotFSImageFormat {
     INode currentChild = parent.getChild(createdNodeName,
         Snapshot.CURRENT_STATE_ID);
     if (currentChild == null) {
-      throw new IOException("Cannot find an INode associated with the INode "
+      FSImage.LOG.error("Cannot find an INode associated with the INode "
           + DFSUtil.bytes2String(createdNodeName)
-          + " in created list while loading FSImage.");
+          + " in created list of parent " + parent.getFullPathName() +
+            " while loading FSImage. Skip it.");
     }
     return currentChild;
   }
@@ -176,7 +178,9 @@ public class SnapshotFSImageFormat {
     for (int i = 0; i < createdSize; i++) {
       byte[] createdNodeName = FSImageSerialization.readLocalName(in);
       INode created = loadCreated(createdNodeName, parent);
-      createdList.add(created);
+      if (created != null) {
+        createdList.add(created);
+      }
     }
     return createdList;
   }

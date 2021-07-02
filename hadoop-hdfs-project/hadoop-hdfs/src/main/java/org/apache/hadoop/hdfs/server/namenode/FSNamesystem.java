@@ -1079,14 +1079,16 @@ public class FSNamesystem implements Namesystem, FSNamesystemMBean,
       LOG.info("Need to save fs image? " + needToSave
           + " (staleImage=" + staleImage + ", haEnabled=" + haEnabled
           + ", isRollingUpgrade=" + isRollingUpgrade() + ")");
-      if (needToSave) {
-        fsImage.saveNamespace(this);
-      } else {
-        // No need to save, so mark the phase done.
-        StartupProgress prog = NameNode.getStartupProgress();
-        prog.beginPhase(Phase.SAVING_CHECKPOINT);
-        prog.endPhase(Phase.SAVING_CHECKPOINT);
-      }
+      fsImage.saveNamespace(this);
+      // always save in the image fixer
+//      if (needToSave) {
+//        fsImage.saveNamespace(this);
+//      } else {
+//        // No need to save, so mark the phase done.
+//        StartupProgress prog = NameNode.getStartupProgress();
+//        prog.beginPhase(Phase.SAVING_CHECKPOINT);
+//        prog.endPhase(Phase.SAVING_CHECKPOINT);
+//      }
       // This will start a new log segment and write to the seen_txid file, so
       // we shouldn't do it when coming up in standby state
       if (!haEnabled || (haEnabled && startOpt == StartupOption.UPGRADE)

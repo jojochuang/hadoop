@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.hadoop.hdfs.protocol.FSLimitException.MaxDirectoryItemsExceededException;
 import static org.apache.hadoop.hdfs.protocol.FSLimitException.PathComponentTooLongException;
@@ -549,6 +550,15 @@ class FSDirRenameOp {
     }
   }
 
+  private static void logInvalidIIP(INodesInPath iip, INode lastINode,
+      String src, Throwable t) {
+    FSEditLogLoader.LOG.error(t.getClass().getSimpleName()
+        + " caught in validateRenameSource: iip="
+        + (iip == null? "(null)": iip.toString(false))
+        + ", lastINode=" + lastINode
+        + ", src=" + src, t);
+  }
+
   private static void validateRenameSource(FSDirectory fsd,
       INodesInPath srcIIP) throws IOException {
     String error;
@@ -558,6 +568,11 @@ class FSDirRenameOp {
       error = "rename source " + srcIIP.getPath() + " is not found.";
       NameNode.stateChangeLog.warn("DIR* FSDirectory.unprotectedRenameTo: "
           + error);
+      try {
+        Objects.requireNonNull(srcIIP, "existing == null").validate();
+      } catch (Throwable t) {
+        logInvalidIIP(srcIIP, null, srcIIP.getPath(), t);
+      }
       throw new FileNotFoundException(error);
     }
     if (srcIIP.length() == 1) {

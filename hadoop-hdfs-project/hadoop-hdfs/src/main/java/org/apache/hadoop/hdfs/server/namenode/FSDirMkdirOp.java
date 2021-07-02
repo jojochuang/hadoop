@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.apache.hadoop.util.Time.now;
 
@@ -171,6 +172,15 @@ class FSDirMkdirOp {
     return existing;
   }
 
+  private static void logInvalidIIP(INodesInPath iip, INode lastINode,
+      String src, Throwable t) {
+    FSEditLogLoader.LOG.error(t.getClass().getSimpleName()
+        + " caught in mkdirForEditLog: iip="
+        + (iip == null? "(null)": iip.toString(false))
+        + ", lastINode=" + lastINode
+        + ", src=" + src, t);
+  }
+
   static void mkdirForEditLog(FSDirectory fsd, long inodeId, String src,
       PermissionStatus permissions, List<AclEntry> aclEntries, long timestamp)
       throws QuotaExceededException, UnresolvedLinkException, AclException,
@@ -179,9 +189,20 @@ class FSDirMkdirOp {
     INodesInPath iip = fsd.getINodesInPath(src, false);
     final byte[] localName = iip.getLastLocalName();
     final INodesInPath existing = iip.getParentINodesInPath();
-    Preconditions.checkState(existing.getLastINode() != null);
-    unprotectedMkdir(fsd, inodeId, existing, localName, permissions, aclEntries,
-        timestamp);
+    //Preconditions.checkState(existing.getLastINode() != null);
+    try {
+      Objects.requireNonNull(existing, "existing == null").validate();
+    } catch (Throwable t) {
+      logInvalidIIP(existing, null, src, t);
+    }
+    INode lastINode = null;
+    try {
+      lastINode = existing.getLastINode();
+      unprotectedMkdir(fsd, inodeId, existing, localName, permissions,
+          aclEntries, timestamp);
+    } catch (Throwable t) {
+      logInvalidIIP(existing, lastINode, src, t);
+    }
   }
 
   private static INodesInPath createSingleDirectory(FSDirectory fsd,

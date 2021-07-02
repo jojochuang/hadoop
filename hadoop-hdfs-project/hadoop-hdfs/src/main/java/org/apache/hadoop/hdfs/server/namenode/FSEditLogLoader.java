@@ -329,6 +329,7 @@ public class FSEditLogLoader {
     }
     final boolean toAddRetryCache = fsNamesys.hasRetryCache() && op.hasRpcIds();
 
+    try {
     switch (op.opCode) {
     case OP_ADD: {
       AddCloseOp addCloseOp = (AddCloseOp)op;
@@ -411,7 +412,7 @@ public class FSEditLogLoader {
       // Fall-through for case 2.
       // Regardless of whether it's a new file or an updated file,
       // update the block list.
-      
+
       // Update the salient file attributes.
       newFile.setAccessTime(addCloseOp.atime, Snapshot.CURRENT_STATE_ID);
       newFile.setModificationTime(addCloseOp.mtime, Snapshot.CURRENT_STATE_ID);
@@ -494,7 +495,7 @@ public class FSEditLogLoader {
       INodeFile oldFile = INodeFile.valueOf(iip.getLastINode(), path);
       // Update in-memory data structures
       updateBlocks(fsDir, updateOp, iip, oldFile);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(updateOp.rpcClientId, updateOp.rpcCallId);
       }
@@ -536,7 +537,7 @@ public class FSEditLogLoader {
       }
       FSDirConcatOp.unprotectedConcat(fsDir, targetIIP, srcFiles,
           concatDeleteOp.timestamp);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(concatDeleteOp.rpcClientId,
             concatDeleteOp.rpcCallId);
@@ -548,7 +549,7 @@ public class FSEditLogLoader {
       final String src = renameReservedPathsOnUpgrade(renameOp.src, logVersion);
       final String dst = renameReservedPathsOnUpgrade(renameOp.dst, logVersion);
       FSDirRenameOp.renameForEditLog(fsDir, src, dst, renameOp.timestamp);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(renameOp.rpcClientId, renameOp.rpcCallId);
       }
@@ -559,7 +560,7 @@ public class FSEditLogLoader {
       FSDirDeleteOp.deleteForEditLog(
           fsDir, renameReservedPathsOnUpgrade(deleteOp.path, logVersion),
           deleteOp.timestamp);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(deleteOp.rpcClientId, deleteOp.rpcCallId);
       }
@@ -644,7 +645,7 @@ public class FSEditLogLoader {
       FSDirSymlinkOp.unprotectedAddSymlink(fsDir, iip.getExistingINodes(),
           iip.getLastLocalName(), inodeId, symlinkOp.value, symlinkOp.mtime,
           symlinkOp.atime, symlinkOp.permissionStatus);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(symlinkOp.rpcClientId, symlinkOp.rpcCallId);
       }
@@ -656,7 +657,7 @@ public class FSEditLogLoader {
           renameReservedPathsOnUpgrade(renameOp.src, logVersion),
           renameReservedPathsOnUpgrade(renameOp.dst, logVersion),
           renameOp.timestamp, renameOp.options);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(renameOp.rpcClientId, renameOp.rpcCallId);
       }
@@ -740,7 +741,7 @@ public class FSEditLogLoader {
       collectedBlocks.clear();
       fsNamesys.dir.removeFromInodeMap(removedINodes);
       removedINodes.clear();
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(deleteSnapshotOp.rpcClientId,
             deleteSnapshotOp.rpcCallId);
@@ -756,7 +757,7 @@ public class FSEditLogLoader {
       fsNamesys.getSnapshotManager().renameSnapshot(iip,
           snapshotRoot, renameSnapshotOp.snapshotOldName,
           renameSnapshotOp.snapshotNewName);
-      
+
       if (toAddRetryCache) {
         fsNamesys.addCacheEntry(renameSnapshotOp.rpcClientId,
             renameSnapshotOp.rpcCallId);
@@ -795,7 +796,7 @@ public class FSEditLogLoader {
     case OP_ROLLING_UPGRADE_START: {
       if (startOpt == StartupOption.ROLLINGUPGRADE) {
         final RollingUpgradeStartupOption rollingUpgradeOpt
-            = startOpt.getRollingUpgradeStartupOption(); 
+            = startOpt.getRollingUpgradeStartupOption();
         if (rollingUpgradeOpt == RollingUpgradeStartupOption.ROLLBACK) {
           throw new RollingUpgradeOp.RollbackException();
         } else if (rollingUpgradeOpt == RollingUpgradeStartupOption.DOWNGRADE) {
@@ -921,6 +922,9 @@ public class FSEditLogLoader {
     }
     default:
       throw new IOException("Invalid operation read " + op.opCode);
+    }
+    } catch (Throwable t) {
+      LOG.error("caught exception, skip", t);
     }
     return inodeId;
   }

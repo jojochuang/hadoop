@@ -297,6 +297,8 @@ public class FSDirAttrOp {
     final INode inode = inodesInPath.getLastINode();
     if (inode == null) {
       throw new FileNotFoundException("File does not exist: " + src);
+      //FSEditLogLoader.LOG.error("File does not exist: " + src);
+      //return;
     }
     int snapshotId = inodesInPath.getLatestSnapshotId();
     inode.setPermission(permissions, snapshotId);
@@ -311,6 +313,8 @@ public class FSDirAttrOp {
     INode inode = inodesInPath.getLastINode();
     if (inode == null) {
       throw new FileNotFoundException("File does not exist: " + src);
+      //FSEditLogLoader.LOG.error("File does not exist: " + src);
+      //return;
     }
     if (username != null) {
       inode = inode.setUser(username, inodesInPath.getLatestSnapshotId());
@@ -336,8 +340,7 @@ public class FSDirAttrOp {
       long mtime, long atime, boolean force, Throwable t) {
     FSEditLogLoader.LOG.error(t.getClass().getSimpleName()
         + " caught in unprotectedSetTimes: iip="
-        + (iip == null? "(null": iip.toString())
-//        + Optional.fromNullable(iip).map(i -> i.toString(false)).orElse(null)
+        + (iip == null? "(null)": iip.toString(false))
         + ", lastINode=" + lastINode
         + ", mtime=" + mtime + ", atime=" + atime + ", force? " + force, t);
   }

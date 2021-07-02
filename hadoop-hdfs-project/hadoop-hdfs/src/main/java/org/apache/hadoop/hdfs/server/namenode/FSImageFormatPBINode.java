@@ -242,11 +242,21 @@ public final class FSImageFormatPBINode {
         INodeDirectory p = dir.getInode(e.getParent()).asDirectory();
         for (long id : e.getChildrenList()) {
           INode child = dir.getInode(id);
+          if (child == null) {
+            FSImage.LOG.error("Skipping null inode id " + id + " in parent " +
+                p.getFullPathName() + " id=" + p.getId());
+            continue;
+          }
           addToParent(p, child);
         }
         for (int refId : e.getRefChildrenList()) {
           INodeReference ref = refList.get(refId);
-          addToParent(p, ref);
+          if (ref == null) {
+            FSImage.LOG.error("Skipping null inode reference id " + refId + " in parent " +
+                 p.getFullPathName() + " id=" + p.getId());
+          } else {
+            addToParent(p, ref);
+          }
         }
       }
     }

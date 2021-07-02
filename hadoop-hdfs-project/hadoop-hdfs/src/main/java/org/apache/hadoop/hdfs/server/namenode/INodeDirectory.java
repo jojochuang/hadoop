@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.PathIsNotDirectoryException;
 import org.apache.hadoop.fs.permission.FsAction;
 import org.apache.hadoop.fs.permission.PermissionStatus;
@@ -54,6 +56,8 @@ import static org.apache.hadoop.hdfs.server.blockmanagement.BlockStoragePolicySu
  */
 public class INodeDirectory extends INodeWithAdditionalFields
     implements INodeDirectoryAttributes {
+
+  public static final Log LOG = LogFactory.getLog(INodeDirectory.class.getName());
 
   /** Cast INode to INodeDirectory. */
   public static INodeDirectory valueOf(INode inode, Object path
@@ -509,7 +513,13 @@ public class INodeDirectory extends INodeWithAdditionalFields
     }
 
     final INode removed = children.remove(i);
-    Preconditions.checkState(removed == child);
+    try {
+      Preconditions.checkState(removed == child);
+    } catch (IllegalStateException e){
+      LOG.error("Intended to remove " + child.toDetailString() + " from "
+          + this.getFullPathName() + ", but " + removed.toDetailString()
+          + "was removed");
+    }
     return true;
   }
 

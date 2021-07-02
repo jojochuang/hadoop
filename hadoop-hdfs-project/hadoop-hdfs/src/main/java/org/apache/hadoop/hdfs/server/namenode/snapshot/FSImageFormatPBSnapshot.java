@@ -121,6 +121,16 @@ public class FSImageFormatPBSnapshot {
         INodeReferenceSection.INodeReference r) throws IOException {
       long referredId = r.getReferredId();
       INode referred = fsDir.getInode(referredId);
+      // ENGESC-127. referred may be a null pointer. swallow the NPE to let
+      // NameNode starts, assuming the reference is invalid.
+      if (referred == null) {
+        FSImage.LOG.error("Reference id " + referredId + " is invalid. " +
+            (r.hasDstSnapshotId() ? "dstSnapshotId=" + r.getDstSnapshotId() : "") + ", " +
+            (r.hasLastSnapshotId() ? "lastSnapshotId=" + r.getLastSnapshotId() : "") + ", " +
+            (r.hasName() ? "name=" + r.getName().toStringUtf8() : "") + ". " +
+            "Skip it.");
+        return null;
+      }
       WithCount withCount = (WithCount) referred.getParentReference();
       if (withCount == null) {
         withCount = new INodeReference.WithCount(null, referred);
@@ -266,7 +276,9 @@ public class FSImageFormatPBSnapshot {
         CreatedListEntry entry = CreatedListEntry.parseDelimitedFrom(in);
         INode created = SnapshotFSImageFormat.loadCreated(entry.getName()
             .toByteArray(), dir);
-        clist.add(created);
+        if (created != null) {
+          clist.add(created);
+        }
       }
       return clist;
     }

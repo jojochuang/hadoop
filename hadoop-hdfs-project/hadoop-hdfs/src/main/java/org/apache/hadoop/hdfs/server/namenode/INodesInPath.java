@@ -442,7 +442,7 @@ public class INodesInPath {
     return toString(true);
   }
 
-  private String toString(boolean vaildateObject) {
+  String toString(boolean vaildateObject) {
     if (vaildateObject) {
       validate();
     }
