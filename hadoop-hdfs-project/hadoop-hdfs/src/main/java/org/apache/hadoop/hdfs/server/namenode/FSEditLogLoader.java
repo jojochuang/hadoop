@@ -329,7 +329,6 @@ public class FSEditLogLoader {
     }
     final boolean toAddRetryCache = fsNamesys.hasRetryCache() && op.hasRpcIds();
 
-    try {
     switch (op.opCode) {
     case OP_ADD: {
       AddCloseOp addCloseOp = (AddCloseOp)op;
@@ -922,9 +921,6 @@ public class FSEditLogLoader {
     }
     default:
       throw new IOException("Invalid operation read " + op.opCode);
-    }
-    } catch (Throwable t) {
-      LOG.error("caught exception, skip", t);
     }
     return inodeId;
   }
