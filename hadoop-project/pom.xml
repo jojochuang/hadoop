@@ -1536,7 +1536,7 @@
           -->
         <groupId>net.minidev</groupId>
         <artifactId>json-smart</artifactId>
-        <version>2.3</version>
+        <version>2.4.7</version>
       </dependency>
       <dependency>
         <groupId>org.skyscreamer</groupId>
@@ -2207,7 +2207,7 @@
               <target>${javac.version}</target>
               <compilerArguments>
                 <Xlint/>
-				<Xlint:-unchecked/>
+				&lt;Xlint:-unchecked/>
                 <Xmaxwarns>9999</Xmaxwarns>
               </compilerArguments>
             </configuration>
