@@ -21,6 +21,7 @@ import static org.apache.hadoop.crypto.key.KeyProviderCryptoExtension.EncryptedK
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +34,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.crypto.key.KeyProvider;
 import org.apache.hadoop.crypto.key.KeyProvider.Options;
 import org.apache.hadoop.crypto.key.KeyProviderCryptoExtension;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.authentication.client.AuthenticationException;
+import org.apache.hadoop.security.token.Token;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -256,5 +259,28 @@ public class TestLoadBalancingKMSClientProvider {
       assertTrue(ioe.getCause().getClass().getName().contains(
           "AuthenticationException"));
     }
+  }
+
+  @Test
+  public void testAddDelegationToken() throws IOException {
+    Configuration conf = new Configuration();
+    KMSClientProvider p1 = mock(KMSClientProvider.class);
+    KMSClientProvider p2 = mock(KMSClientProvider.class);
+    LoadBalancingKMSClientProvider kp = new LoadBalancingKMSClientProvider(
+        new KMSClientProvider[] {p1, p2}, 0, conf);
+
+    Token<?>[] p2Tokens = null;
+
+    when(p1.addDelegationTokens(anyString(), Mockito.<Credentials>any())).
+        thenThrow(new IOException("exception"));
+    when(p2.addDelegationTokens(anyString(), Mockito.<Credentials>any())).
+        thenReturn(p2Tokens);
+
+    when(p1.getKMSUrl()).thenReturn("<p1>");
+    when(p2.getKMSUrl()).thenReturn("<p2>");
+
+    Credentials credentials = new Credentials();
+    kp.addDelegationTokens("foo", credentials);
+
   }
 }

@@ -32,6 +32,7 @@ import org.apache.hadoop.crypto.key.KeyProvider;
 import org.apache.hadoop.crypto.key.KeyProviderCryptoExtension.CryptoExtension;
 import org.apache.hadoop.crypto.key.KeyProviderCryptoExtension.EncryptedKeyVersion;
 import org.apache.hadoop.crypto.key.KeyProviderDelegationTokenExtension;
+import org.apache.hadoop.io.MultipleIOException;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.StringUtils;
@@ -131,8 +132,8 @@ public class LoadBalancingKMSClientProvider extends KeyProvider implements
     if (providers.length == 0) {
       throw new IOException("No providers configured !!");
     }
+    List<IOException> exceptions = new ArrayList<>();
     List<Token<?>> allTokens = new ArrayList<Token<?>>();
-    IOException ex = null;
     for (int i = 0; i< providers.length; i++) {
       // add delegation tokens from all KMS providers
       KMSClientProvider provider = providers[i];
@@ -151,7 +152,7 @@ public class LoadBalancingKMSClientProvider extends KeyProvider implements
         // KMS providers
         LOG.warn("KMS provider at [{}] threw an IOException!! {}",
             provider.getKMSUrl(), StringUtils.stringifyException(ioe));
-        ex = ioe;
+        exceptions.add(ioe);
       } catch (Exception e) {
         if (e instanceof RuntimeException) {
           throw (RuntimeException) e;
@@ -160,10 +161,21 @@ public class LoadBalancingKMSClientProvider extends KeyProvider implements
         }
       }
     }
-    if (ex != null && allTokens.isEmpty()) {
+    if (exceptions.size() == providers.length) {
       LOG.warn("Aborting since the Request has failed with all KMS"
           + " providers in the group. !!");
-      throw ex;
+      StringBuilder sb = new StringBuilder();
+      sb.append("Total ").append(providers.length).append(" providers. [");
+      for (KMSClientProvider provider : providers) {
+        if (provider == null) {
+          sb.append("(null provider),");
+        } else {
+          sb.append(provider.getKMSUrl()).append(",");
+        }
+      }
+      sb.append("]");
+      LOG.warn("The list of KMS servers: " + sb.toString());
+      throw MultipleIOException.createIOException(exceptions);
     }
     Token<?>[] tokenArray = new Token<?>[allTokens.size()];
     return allTokens.toArray(tokenArray);
