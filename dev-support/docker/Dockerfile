@@ -18,7 +18,7 @@
 # Dockerfile for installing the necessary dependencies for building Hadoop.
 # See BUILDING.txt.
 
-FROM ubuntu:xenial
+FROM ubuntu:xenial-20210114
 
 WORKDIR /root
 
