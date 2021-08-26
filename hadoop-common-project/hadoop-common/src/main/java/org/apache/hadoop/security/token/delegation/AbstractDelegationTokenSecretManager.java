@@ -154,7 +154,21 @@ extends AbstractDelegationTokenIdentifier>
     setCurrentKeyId(0);
     allKeys.clear();
     setDelegationTokenSeqNum(0);
+    LOG.info("currentTokens cleared");
     currentTokens.clear();
+  }
+
+  private void logAllCurrentTokens() {
+    LOG.info("====currentTokens====");
+
+    long now = Time.now();
+    for (TokenIdent tokenIdent : currentTokens.keySet()) {
+      LOG.info("tokenIdent={} issueTime: {} max expiration date: {} currentTime: {}",
+          formatTokenId(tokenIdent), Time.formatTime(tokenIdent.getIssueDate()),
+          Time.formatTime(tokenIdent.getMaxDate()), Time.formatTime(now));
+    }
+
+    LOG.info("====end of currentTokens====");
   }
 
   /**
@@ -305,6 +319,9 @@ extends AbstractDelegationTokenIdentifier>
     currentTokens.put(ident, tokenInfo);
     addTokenForOwnerStats(ident);
     storeNewToken(ident, tokenInfo.getRenewDate());
+
+    LOG.info("storeToken", new Throwable());
+    logAllCurrentTokens();
   }
 
   /**
@@ -315,6 +332,9 @@ extends AbstractDelegationTokenIdentifier>
       DelegationTokenInformation tokenInfo) throws IOException {
     currentTokens.put(ident, tokenInfo);
     updateStoredToken(ident, tokenInfo.getRenewDate());
+
+    LOG.info("updateToken", new Throwable());
+    logAllCurrentTokens();
   }
 
   /**
@@ -356,6 +376,8 @@ extends AbstractDelegationTokenIdentifier>
       throw new IOException("Same delegation token being added twice: "
           + formatTokenId(identifier));
     }
+    LOG.info("addPersistedDelegationToken", new Throwable());
+    logAllCurrentTokens();
   }
 
   /** 
@@ -379,6 +401,9 @@ extends AbstractDelegationTokenIdentifier>
       currentKey = newKey;
       storeDelegationKey(currentKey);
     }
+
+    LOG.info("updateCurrentKey", new Throwable());
+    logAllCurrentTokens();
   }
   
   /** 
@@ -593,6 +618,9 @@ extends AbstractDelegationTokenIdentifier>
     }
     removeTokenForOwnerStats(id);
     removeStoredToken(id);
+
+    LOG.info("cancelToken", new Throwable());
+    logAllCurrentTokens();
     return id;
   }
   
@@ -655,6 +683,9 @@ extends AbstractDelegationTokenIdentifier>
     }
     // don't hold lock on 'this' to avoid edit log updates blocking token ops
     logExpireTokens(expiredTokens);
+
+    LOG.info("removeExpiredToken", new Throwable());
+    logAllCurrentTokens();
   }
 
   protected void logExpireTokens(
@@ -824,5 +855,8 @@ extends AbstractDelegationTokenIdentifier>
     for (TokenIdent id : currentTokens.keySet()) {
       addTokenForOwnerStats(id);
     }
+
+    LOG.info("syncTokenOwnerStats", new Throwable());
+    logAllCurrentTokens();
   }
 }

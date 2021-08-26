@@ -260,6 +260,8 @@ public abstract class DelegationTokenAuthenticationHandler
             } catch (AuthorizationException ex) {
               HttpExceptionUtils.createServletExceptionResponse(response,
                   HttpServletResponse.SC_FORBIDDEN, ex);
+              LOG.warn("Failed to authorize {} from {}",
+                  requestUgi, request.getRemoteAddr(), ex);
               return false;
             }
           }
@@ -401,6 +403,8 @@ public abstract class DelegationTokenAuthenticationHandler
         token = null;
         HttpExceptionUtils.createServletExceptionResponse(response,
             HttpServletResponse.SC_FORBIDDEN, new AuthenticationException(ex));
+        LOG.warn("Failed to authenticate using the delegation token provided " +
+                "by the client.", ex);
       }
     } else {
       LOG.debug("Falling back to {} (req={})", authHandler.getClass(), request);
