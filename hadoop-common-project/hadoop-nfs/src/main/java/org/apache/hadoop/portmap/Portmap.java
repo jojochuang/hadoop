@@ -19,7 +19,6 @@ package org.apache.hadoop.portmap;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import io.netty.bootstrap.Bootstrap;
@@ -32,16 +31,15 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import org.apache.hadoop.oncrpc.RpcProgram;
 import org.apache.hadoop.oncrpc.RpcUtil;
+import org.apache.hadoop.transport.NettyTransportFactory;
 import org.apache.hadoop.util.StringUtils;
 
 import org.apache.hadoop.classification.VisibleForTesting;
@@ -108,14 +106,14 @@ final class Portmap {
   void start(final int idleTimeMilliSeconds, final SocketAddress tcpAddress,
       final SocketAddress udpAddress) throws InterruptedException {
 
-    bossGroup = new NioEventLoopGroup();
-    workerGroup = new NioEventLoopGroup(0, Executors.newCachedThreadPool());
+    bossGroup = NettyTransportFactory.createBossGroup();
+    workerGroup = NettyTransportFactory.createWorkerGroup(o);
 
     tcpServer = new ServerBootstrap();
     tcpServer.group(bossGroup, workerGroup)
         .option(ChannelOption.SO_REUSEADDR, true)
         .childOption(ChannelOption.SO_REUSEADDR, true)
-        .channel(NioServerSocketChannel.class)
+        .channel(NettyTransportFactory.getServerSocketChannelClass())
         .childHandler(new ChannelInitializer<SocketChannel>() {
           private final IdleStateHandler idleStateHandler = new IdleStateHandler(
               0, 0, idleTimeMilliSeconds, TimeUnit.MILLISECONDS);
@@ -129,13 +127,13 @@ final class Portmap {
                 RpcUtil.STAGE_RPC_TCP_RESPONSE);
           }});
 
-    udpGroup = new NioEventLoopGroup(0, Executors.newCachedThreadPool());
+    udpGroup = NettyTransportFactory.createWorkerGroup(0);
 
     udpServer = new Bootstrap();
     udpServer.group(udpGroup)
-        .channel(NioDatagramChannel.class)
-        .handler(new ChannelInitializer<NioDatagramChannel>() {
-          @Override protected void initChannel(NioDatagramChannel ch)
+        .channel(NettyTransportFactory.getDatagramChannel())
+        .handler(new ChannelInitializer<DatagramChannel>() {
+          @Override protected void initChannel(DatagramChannel ch)
               throws Exception {
             ChannelPipeline p = ch.pipeline();
             p.addLast(

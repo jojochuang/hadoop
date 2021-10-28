@@ -24,10 +24,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import org.apache.hadoop.classification.VisibleForTesting;
+import org.apache.hadoop.transport.NettyTransportFactory;
 
 /**
  * A simple TCP based RPC client which just sends a request to a server.
@@ -37,7 +37,7 @@ public class SimpleTcpClient {
   protected final int port;
   protected final XDR request;
   protected final boolean oneShot;
-  private NioEventLoopGroup workerGroup;
+  private EventLoopGroup workerGroup;
   private ChannelFuture future;
   
   public SimpleTcpClient(String host, int port, XDR request) {
@@ -67,10 +67,10 @@ public class SimpleTcpClient {
   @VisibleForTesting
   public void run() {
     // Configure the client.
-    workerGroup = new NioEventLoopGroup();
+    workerGroup = NettyTransportFactory.createBossGroup();
     Bootstrap bootstrap = new Bootstrap()
         .group(workerGroup)
-        .channel(NioSocketChannel.class);
+        .channel(NettyTransportFactory.getSocketChannelClass());
 
     try {
       future = bootstrap.handler(setChannelHandler())

@@ -28,9 +28,9 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import org.apache.hadoop.transport.NettyTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,13 +64,13 @@ public class SimpleTcpServer {
 
   public void run() throws InterruptedException {
     // Configure the Server.
-    bossGroup = new NioEventLoopGroup();
-    workerGroup = new NioEventLoopGroup(workerCount, Executors.newCachedThreadPool());
+    bossGroup = NettyTransportFactory.createBossGroup();
+    workerGroup = NettyTransportFactory.createWorkerGroup(workerCount);
 
     server = new ServerBootstrap();
 
     server.group(bossGroup, workerGroup)
-        .channel(NioServerSocketChannel.class)
+        .channel(NettyTransportFactory.getServerSocketChannelClass())
         .childHandler(new ChannelInitializer<SocketChannel>() {
       @Override
       protected void initChannel(SocketChannel ch) throws Exception {

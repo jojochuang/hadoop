@@ -28,12 +28,12 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.DefaultHttpResponse;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpRequestEncoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
+import org.apache.hadoop.hdfs.util.NettyTransportFactory;
 import org.slf4j.Logger;
 
 import java.net.InetSocketAddress;
@@ -102,7 +102,7 @@ class SimpleHttpProxyHandler extends SimpleChannelInboundHandler<HttpRequest> {
     final Channel client = ctx.channel();
     Bootstrap proxiedServer = new Bootstrap()
       .group(client.eventLoop())
-      .channel(NioSocketChannel.class)
+      .channel(NettyTransportFactory.getSocketChannelClass())
       .handler(new ChannelInitializer<SocketChannel>() {
         @Override
         protected void initChannel(SocketChannel ch) throws Exception {

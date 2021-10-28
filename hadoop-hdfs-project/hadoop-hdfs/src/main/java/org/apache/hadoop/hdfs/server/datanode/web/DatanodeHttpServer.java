@@ -25,7 +25,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
@@ -40,6 +39,7 @@ import org.apache.hadoop.hdfs.server.common.JspHelper;
 import org.apache.hadoop.hdfs.server.datanode.BlockScanner;
 import org.apache.hadoop.hdfs.server.datanode.DataNode;
 import org.apache.hadoop.hdfs.server.datanode.web.webhdfs.DataNodeUGIProvider;
+import org.apache.hadoop.hdfs.util.NettyTransportFactory;
 import org.apache.hadoop.http.HttpConfig;
 import org.apache.hadoop.http.HttpServer2;
 import org.apache.hadoop.net.NetUtils;
@@ -145,8 +145,8 @@ public class DatanodeHttpServer implements Closeable {
     this.confForCreate = new Configuration(conf);
     confForCreate.set(FsPermission.UMASK_LABEL, "000");
 
-    this.bossGroup = new NioEventLoopGroup();
-    this.workerGroup = new NioEventLoopGroup();
+    this.bossGroup = NettyTransportFactory.createBossGroup();
+    this.workerGroup = NettyTransportFactory.createWorkerGroup();
     this.externalHttpChannel = externalHttpChannel;
     HttpConfig.Policy policy = DFSUtil.getHttpPolicy(conf);
     final ChannelHandler[] handlers = getFilterHandlers(conf);
@@ -182,7 +182,7 @@ public class DatanodeHttpServer implements Closeable {
               DFSConfigKeys.DFS_WEBHDFS_NETTY_LOW_WATERMARK_DEFAULT));
 
       if (externalHttpChannel == null) {
-        httpServer.channel(NioServerSocketChannel.class);
+        httpServer.channel(NettyTransportFactory.getServerSocketChannelClass());
       } else {
         httpServer.channelFactory(new ChannelFactory<NioServerSocketChannel>() {
           @Override

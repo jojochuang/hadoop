@@ -25,13 +25,12 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpRequestDecoder;
 import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import org.apache.hadoop.hdfs.util.NettyTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -64,12 +63,12 @@ public class WebImageViewer implements Closeable {
   }
   public WebImageViewer(InetSocketAddress address, Configuration conf) {
     this.address = address;
-    this.bossGroup = new NioEventLoopGroup();
-    this.workerGroup = new NioEventLoopGroup();
+    this.bossGroup = NettyTransportFactory.createBossGroup();
+    this.workerGroup = NettyTransportFactory.createWorkerGroup();
     this.allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
     this.bootstrap = new ServerBootstrap()
       .group(bossGroup, workerGroup)
-      .channel(NioServerSocketChannel.class);
+      .channel(NettyTransportFactory.getServerSocketChannelClass());
     this.conf = conf;
     UserGroupInformation.setConfiguration(conf);
   }

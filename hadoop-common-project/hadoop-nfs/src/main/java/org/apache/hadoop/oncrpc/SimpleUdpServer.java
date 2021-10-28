@@ -28,8 +28,8 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.socket.DatagramChannel;
+import org.apache.hadoop.transport.NettyTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,17 +58,17 @@ public class SimpleUdpServer {
   }
 
   public void run() throws InterruptedException {
-    workerGroup = new NioEventLoopGroup(workerCount, Executors.newCachedThreadPool());
+    workerGroup = NettyTransportFactory.createWorkerGroup(workerCount);
 
     server = new Bootstrap();
     server.group(workerGroup)
-        .channel(NioDatagramChannel.class)
+        .channel(NettyTransportFactory.getDatagramChannel())
         .option(ChannelOption.SO_BROADCAST, true)
         .option(ChannelOption.SO_SNDBUF, SEND_BUFFER_SIZE)
         .option(ChannelOption.SO_RCVBUF, RECEIVE_BUFFER_SIZE)
         .option(ChannelOption.SO_REUSEADDR, true)
-        .handler(new ChannelInitializer<NioDatagramChannel>() {
-          @Override protected void initChannel(NioDatagramChannel ch)
+        .handler(new ChannelInitializer<DatagramChannel>() {
+          @Override protected void initChannel(DatagramChannel ch)
               throws Exception {
             ChannelPipeline p = ch.pipeline();
             p.addLast(
