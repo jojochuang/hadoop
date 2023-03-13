@@ -803,6 +803,12 @@
                         <exclude>jetty-dir.css</exclude>
                       </excludes>
                     </filter>
+                    <filter>
+                      <artifact>org.yaml:snakeyaml</artifact>
+                      <excludes>
+                        <exclude>META-INF/versions/9/module-info.class</exclude>
+                      </excludes>
+                    </filter>
                   </filters>
 
                   <!-- relocate classes from mssql-jdbc -->
@@ -1021,4 +1027,3 @@
   </profiles>
 
 </project>
-
