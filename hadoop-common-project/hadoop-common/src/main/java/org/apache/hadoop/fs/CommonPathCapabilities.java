@@ -146,4 +146,7 @@ public final class CommonPathCapabilities {
    */
   public static final String ABORTABLE_STREAM =
       "fs.capability.outputstream.abortable";
+
+  public static final String LEASE_RECOVERABLE =
+    "fs.capability.lease.recoverable";
 }
