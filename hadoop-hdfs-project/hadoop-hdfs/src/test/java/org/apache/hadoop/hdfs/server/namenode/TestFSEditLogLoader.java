@@ -44,6 +44,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.hdfs.DFSClient;
 import org.apache.hadoop.hdfs.DFSConfigKeys;
 import org.apache.hadoop.hdfs.DFSTestUtil;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
@@ -54,6 +55,7 @@ import org.apache.hadoop.hdfs.protocol.AddErasureCodingPolicyResponse;
 import org.apache.hadoop.hdfs.protocol.Block;
 import org.apache.hadoop.hdfs.protocol.ErasureCodingPolicy;
 import org.apache.hadoop.hdfs.protocol.ErasureCodingPolicyState;
+import org.apache.hadoop.hdfs.qjournal.MiniQJMHACluster;
 import org.apache.hadoop.hdfs.server.blockmanagement.BlockInfo;
 import org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoContiguous;
 import org.apache.hadoop.hdfs.server.blockmanagement.BlockInfoStriped;
@@ -836,6 +838,50 @@ public class TestFSEditLogLoader {
     assertTrue(capture.getOutput().contains("suppressed logging 1 times"));
     assertTrue(capture.getOutput().contains("Loaded 2 edits file(s)"));
     assertTrue(capture.getOutput().contains("total size 2.0"));
+  }
+
+  @Test
+  public void testReduceFileNameLengthLimit() throws IOException {
+    // start a cluster
+    Configuration conf = new HdfsConfiguration();
+    final int blockSize = 16 * 1024;
+    conf.setLong(DFSConfigKeys.DFS_BLOCK_SIZE_KEY, blockSize);
+    MiniQJMHACluster.Builder builder = new MiniQJMHACluster.Builder(conf).setNumNameNodes(2);
+    builder.getDfsBuilder().numDataNodes(3);
+    MiniQJMHACluster hacluster = builder.build();
+    MiniDFSCluster cluster = hacluster.getDfsCluster();
+    try {
+      cluster.waitActive();
+      cluster.transitionToActive(0);
+      DistributedFileSystem fs = cluster.getFileSystem(0);
+
+      // 1. create a file with very long name in HDFS.
+
+      String longFileName = "/_this_is_a_test_filename_that_is_purposefully_was_made_longer_than_144_characters_to_check_file_system_limitations_and_handling_of_long_filenames1";
+      Path longFilePath = new Path(longFileName);
+      final int fileLength = blockSize;
+      final byte[] bytes = StripedFileTestUtil.generateBytes(fileLength);
+      DFSTestUtil.writeFile(fs, longFilePath, bytes);
+
+      // reduce the max file name length to 5 for the StandBy NN.
+      for (int i = 1; i < 2; i++) {
+        Configuration nnconf = cluster.getConfiguration(i);
+        nnconf.setInt(DFSConfigKeys.DFS_NAMENODE_MAX_COMPONENT_LENGTH_KEY, 5);
+      }
+
+      // 2. Restart NameNode without saving namespace
+      cluster.restartNameNode(1);
+
+      cluster.transitionToStandby(0);
+      cluster.transitionToActive(1);
+
+      cluster.shutdown();
+      cluster = null;
+    } finally {
+      if (cluster != null) {
+        cluster.shutdown();
+      }
+    }
   }
 
   private EditLogInputStream getFakeEditLogInputStream(long startTx, long endTx)
